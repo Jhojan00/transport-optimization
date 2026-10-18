@@ -2,8 +2,14 @@ from transport_optimization.hmath import Axis, Vector3
 
 
 class Package:
-    def __init__(self, size: Vector3):
+    def __init__(self, size: Vector3, start: str, end: str):
         self.size = size
+        self.start = start
+        self.end = end
+
+    @property
+    def volume(self):
+        return self.size.volume()
 
 
 class GuillotineNode:
