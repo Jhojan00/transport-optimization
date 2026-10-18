@@ -1,12 +1,17 @@
+from typing import Literal
+
 from transport_optimization.hmath import Vector3
 from transport_optimization.packages import GuillotineNode, Package
 
+CarType = Literal["Motorbike", "Van", "Truck"]
+
 
 class Vehicle:
-    def __init__(self, width: float, length: float, height: float):
+    def __init__(self, width: float, length: float, height: float, car_type: CarType):
         self.width = width
         self.length = length
         self.height = height
+        self.car_type = car_type
 
         self.content = GuillotineNode(
             Vector3(self.width, self.length, self.height), Vector3.zero()
