@@ -27,25 +27,6 @@ from transport_optimization.ui_components import (
     draw_marker,
 )
 
-COLORS = [
-    ft.Colors.RED,
-    ft.Colors.PINK,
-    ft.Colors.PURPLE,
-    ft.Colors.DEEP_PURPLE,
-    ft.Colors.INDIGO,
-    ft.Colors.BLUE,
-    ft.Colors.LIGHT_BLUE,
-    ft.Colors.CYAN,
-    ft.Colors.TEAL,
-    ft.Colors.GREEN,
-    ft.Colors.LIGHT_GREEN,
-    ft.Colors.LIME,
-    ft.Colors.YELLOW,
-    ft.Colors.AMBER,
-    ft.Colors.ORANGE,
-    ft.Colors.DEEP_ORANGE,
-]
-
 
 @ft.component
 def AppView(
@@ -134,7 +115,7 @@ def optimize(
 
         path = optimal_path_vehicle(vehicle, graph.adjacency_list)
         print(path)
-        path_color = random.choice(COLORS)
+        path_color = ft.CupertinoColors.random()
 
         for i in range(len(path) - 1):
             coord_a = graph.coordinates[path[i]]
