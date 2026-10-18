@@ -1,3 +1,4 @@
+import random
 from collections.abc import Callable
 
 import flet as ft
@@ -7,6 +8,7 @@ from transport_optimization.distribution import (
     distribute_packages,
     generate_packages,
     get_vehicles,
+    optimal_path_vehicle,
 )
 from transport_optimization.graph import TransportGraph
 from transport_optimization.ui_components import (
@@ -24,6 +26,25 @@ from transport_optimization.ui_components import (
     draw_line,
     draw_marker,
 )
+
+COLORS = [
+    ft.Colors.RED,
+    ft.Colors.PINK,
+    ft.Colors.PURPLE,
+    ft.Colors.DEEP_PURPLE,
+    ft.Colors.INDIGO,
+    ft.Colors.BLUE,
+    ft.Colors.LIGHT_BLUE,
+    ft.Colors.CYAN,
+    ft.Colors.TEAL,
+    ft.Colors.GREEN,
+    ft.Colors.LIGHT_GREEN,
+    ft.Colors.LIME,
+    ft.Colors.YELLOW,
+    ft.Colors.AMBER,
+    ft.Colors.ORANGE,
+    ft.Colors.DEEP_ORANGE,
+]
 
 
 @ft.component
@@ -110,6 +131,22 @@ def optimize(
 
         else:
             trucks += 1
+
+        path = optimal_path_vehicle(vehicle, graph.adjacency_list)
+        print(path)
+        path_color = random.choice(COLORS)
+
+        for i in range(len(path) - 1):
+            coord_a = graph.coordinates[path[i]]
+            coord_b = graph.coordinates[path[i + 1]]
+
+            draw_line(
+                map_layers,
+                ftm.MapLatitudeLongitude(coord_a["lat"], coord_a["lon"]),
+                ftm.MapLatitudeLongitude(coord_b["lat"], coord_b["lon"]),
+                path_color,
+                3,
+            )
 
     info.set(motorbikes, vans, trucks, missing)
 

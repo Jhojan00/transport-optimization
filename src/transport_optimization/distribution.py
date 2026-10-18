@@ -1,5 +1,6 @@
 import random
 
+from transport_optimization.dijkastra import get_route_through_waypoints
 from transport_optimization.hmath import Vector3
 from transport_optimization.packages import Package
 from transport_optimization.vehicles import Vehicle
@@ -12,13 +13,32 @@ TRUCK_SIZE = (2.3, 5.0, 2.0)
 def generate_packages(amount: int, start: str, destines: list[str]) -> list[Package]:
     packages = []
 
-    for _ in range(amount):
-        x = random.uniform(0.1, 1.1)
-        y = random.uniform(0.1, 2.5)
-        z = random.uniform(0.1, 1.0)
+    third = amount // 3
+    remainder = amount % 3
 
-        package = Package(Vector3(x, y, z), start, random.choice(destines))
-        packages.append(package)
+    moto_count = third + (1 if remainder > 0 else 0)
+    van_count = third + (1 if remainder > 1 else 0)
+    truck_count = third
+
+    for _ in range(moto_count):
+        x = random.uniform(0.05, MOTORBIKE_SIZE[0])
+        y = random.uniform(0.05, MOTORBIKE_SIZE[1])
+        z = random.uniform(0.05, MOTORBIKE_SIZE[2])
+        packages.append(Package(Vector3(x, y, z), start, random.choice(destines)))
+
+    for _ in range(van_count):
+        x = random.uniform(0.05, VAN_SIZE[0])
+        y = random.uniform(0.05, VAN_SIZE[1])
+        z = random.uniform(0.05, VAN_SIZE[2])
+        packages.append(Package(Vector3(x, y, z), start, random.choice(destines)))
+
+    for _ in range(truck_count):
+        x = random.uniform(0.05, TRUCK_SIZE[0])
+        y = random.uniform(0.05, TRUCK_SIZE[1])
+        z = random.uniform(0.05, TRUCK_SIZE[2])
+        packages.append(Package(Vector3(x, y, z), start, random.choice(destines)))
+
+    random.shuffle(packages)
 
     return packages
 
@@ -43,7 +63,8 @@ def distribute_packages(
         return [], 0
 
     sorted_packates: list[Package] = sorted(
-        packages, key=lambda e: e.volume, reverse=True
+        packages,
+        key=lambda e: e.volume,
     )
     used_vehicles: list[Vehicle] = []
     packet = 0
@@ -81,3 +102,12 @@ def distribute_packages(
             break
 
     return used_vehicles, len(sorted_packates) - packet
+
+
+def optimal_path_vehicle(vehicle: Vehicle, graph) -> list[str]:
+    packages = vehicle.packages
+    waypoints = [vehicle.packages[0].start]
+
+    waypoints.extend(package.end for package in packages)
+
+    return get_route_through_waypoints(graph, waypoints)
