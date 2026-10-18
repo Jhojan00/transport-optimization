@@ -56,7 +56,7 @@ def draw_line(
     a: ftm.MapLatitudeLongitude,
     b: ftm.MapLatitudeLongitude,
     color: ft.Color = ft.Colors.LIGHT_BLUE_100,
-    width: float = 3,
+    width: float = 2,
 ):
     line = ftm.PolylineMarker([a, b], color=color, stroke_width=width)
     layer.polylines.append(line)
@@ -66,11 +66,16 @@ def draw_marker(
     layer: ftm.MarkerLayer,
     point: ftm.MapLatitudeLongitude,
     content: ft.Control | None = None,
+    tooltip: str | None = None,
 ):
 
     if content is None:
         content = ft.Container(
-            bgcolor=ft.Colors.INDIGO, border_radius=10, width=10, height=10
+            bgcolor=ft.Colors.INDIGO,
+            border_radius=10,
+            width=10,
+            height=10,
+            tooltip=tooltip,
         )
 
     marker = ftm.Marker(content, coordinates=point)

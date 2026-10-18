@@ -3,6 +3,7 @@ from collections.abc import Callable
 import flet as ft
 import flet_map as ftm
 
+from transport_optimization.graph import TransportGraph
 from transport_optimization.ui_components import (
     Counter,
     Header,
@@ -10,6 +11,8 @@ from transport_optimization.ui_components import (
     Menu,
     PackagesMenu,
     VehiclesMenu,
+    draw_line,
+    draw_marker,
 )
 
 
@@ -36,6 +39,29 @@ def AppView(
     return content
 
 
+def draw_route(markers_layer: ftm.MarkerLayer, lines_layer: ftm.PolylineLayer):
+    graph = TransportGraph()
+
+    for node in graph.adjacency_list:
+        coords = graph.coordinates[node]
+        draw_marker(
+            markers_layer,
+            ftm.MapLatitudeLongitude(coords["lat"], coords["lon"]),
+            tooltip=node,
+        )
+
+    for node, conn in graph.adjacency_list.items():
+        node_cords = graph.coordinates[node]
+        for city in conn:
+            city_cords = graph.coordinates[city["dest"]]
+
+            draw_line(
+                lines_layer,
+                ftm.MapLatitudeLongitude(node_cords["lat"], node_cords["lon"]),
+                ftm.MapLatitudeLongitude(city_cords["lat"], city_cords["lon"]),
+            )
+
+
 @ft.component
 def App():
 
@@ -50,6 +76,8 @@ def App():
     markers_layer = ftm.MarkerLayer([])
     lines_layer = ftm.PolylineLayer([])
     map_layers = [lines_layer, markers_layer]
+
+    draw_route(markers_layer, lines_layer)
 
     def start_optimization():
         # TODO: Implement optimization.
