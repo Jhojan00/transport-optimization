@@ -1,13 +1,25 @@
+import random
 from collections.abc import Callable
 
 import flet as ft
 import flet_map as ftm
 
+from transport_optimization.distribution import (
+    distribute_packages,
+    generate_packages,
+    get_vehicles,
+    optimal_path_vehicle,
+)
 from transport_optimization.graph import TransportGraph
 from transport_optimization.ui_components import (
+    ConfigMenu,
     Counter,
     Header,
+    Info,
+    InfoMenu,
+    Locations,
     Map,
+    MapLayers,
     Menu,
     PackagesMenu,
     VehiclesMenu,
@@ -15,18 +27,47 @@ from transport_optimization.ui_components import (
     draw_marker,
 )
 
+COLORS = [
+    ft.Colors.RED,
+    ft.Colors.PINK,
+    ft.Colors.PURPLE,
+    ft.Colors.DEEP_PURPLE,
+    ft.Colors.INDIGO,
+    ft.Colors.BLUE,
+    ft.Colors.LIGHT_BLUE,
+    ft.Colors.CYAN,
+    ft.Colors.TEAL,
+    ft.Colors.GREEN,
+    ft.Colors.LIGHT_GREEN,
+    ft.Colors.LIME,
+    ft.Colors.YELLOW,
+    ft.Colors.AMBER,
+    ft.Colors.ORANGE,
+    ft.Colors.DEEP_ORANGE,
+]
+
 
 @ft.component
 def AppView(
     vehicles: list[Counter],
     packages: Counter,
-    map_layers: list[ftm.MapLayer],
+    locations: Locations,
+    map_layers: MapLayers,
+    info: Info,
     start_optimization: Callable,
 ) -> ft.Column:
 
     header = Header()
     start = ft.Button("Start", on_click=start_optimization)
-    menu = Menu([VehiclesMenu(vehicles), PackagesMenu(packages), start])
+    menu = Menu(
+        [
+            VehiclesMenu(vehicles),
+            PackagesMenu(packages),
+            ConfigMenu(locations),
+            InfoMenu(info),
+            start,
+        ]
+    )
     map = Map(map_layers)
 
     body = ft.Row([map, menu], expand=10)
@@ -39,13 +80,15 @@ def AppView(
     return content
 
 
-def draw_route(markers_layer: ftm.MarkerLayer, lines_layer: ftm.PolylineLayer):
-    graph = TransportGraph()
+def draw_route(
+    map_layers: MapLayers,
+    graph: TransportGraph,
+):
 
     for node in graph.adjacency_list:
         coords = graph.coordinates[node]
         draw_marker(
-            markers_layer,
+            map_layers,
             ftm.MapLatitudeLongitude(coords["lat"], coords["lon"]),
             tooltip=node,
         )
@@ -56,10 +99,66 @@ def draw_route(markers_layer: ftm.MarkerLayer, lines_layer: ftm.PolylineLayer):
             city_cords = graph.coordinates[city["dest"]]
 
             draw_line(
-                lines_layer,
+                map_layers,
                 ftm.MapLatitudeLongitude(node_cords["lat"], node_cords["lon"]),
                 ftm.MapLatitudeLongitude(city_cords["lat"], city_cords["lon"]),
             )
+
+
+def optimize(
+    vehicles_amount: tuple[int, int, int],
+    packages_amount: int,
+    locations: Locations,
+    graph: TransportGraph,
+    map_layers: MapLayers,
+    info: Info,
+):
+
+    vehicles = get_vehicles(*vehicles_amount)
+    packages = generate_packages(packages_amount, locations.chosen, locations.locations)
+    distributed, missing = distribute_packages(packages, *vehicles)
+
+    motorbikes = 0
+    vans = 0
+    trucks = 0
+
+    for vehicle in distributed:
+        if vehicle.car_type == "Motorbike":
+            motorbikes += 1
+
+        elif vehicle.car_type == "Van":
+            vans += 1
+
+        else:
+            trucks += 1
+
+        path = optimal_path_vehicle(vehicle, graph.adjacency_list)
+        print(path)
+        path_color = random.choice(COLORS)
+
+        for i in range(len(path) - 1):
+            coord_a = graph.coordinates[path[i]]
+            coord_b = graph.coordinates[path[i + 1]]
+
+            draw_line(
+                map_layers,
+                ftm.MapLatitudeLongitude(coord_a["lat"], coord_a["lon"]),
+                ftm.MapLatitudeLongitude(coord_b["lat"], coord_b["lon"]),
+                path_color,
+                3,
+            )
+
+    info.set(motorbikes, vans, trucks, missing)
+
+    coords = graph.coordinates
+
+    draw_marker(
+        map_layers,
+        ftm.MapLatitudeLongitude(
+            coords[locations.chosen]["lat"], coords[locations.chosen]["lon"]
+        ),
+        color=ft.Colors.GREEN,
+    )
 
 
 @ft.component
@@ -72,19 +171,30 @@ def App():
     ]
 
     packages = Counter(ft.Icons.OUTBOX, "Packages", 10, "Random Generated Package")
+    graph = TransportGraph()
+    locations = Locations(list(map(str, graph.adjacency_list.keys())))
+    locations.pick("Ibagué")
+    info = Info(-1, -1, -1, -1)
 
     markers_layer = ftm.MarkerLayer([])
     lines_layer = ftm.PolylineLayer([])
-    map_layers = [lines_layer, markers_layer]
+    map_layers = MapLayers(markers_layer, lines_layer)
 
-    draw_route(markers_layer, lines_layer)
+    draw_route(map_layers, graph)
 
     def start_optimization():
-        # TODO: Implement optimization.
-        # optimize(vehicles, packages, markers_layer, lines_layer)
-        pass
+        map_layers.reset()
+        draw_route(map_layers, graph)
+        optimize(
+            (vehicles[0].amount, vehicles[1].amount, vehicles[2].amount),
+            packages.amount,
+            locations,
+            graph,
+            map_layers,
+            info,
+        )
 
-    return AppView(vehicles, packages, map_layers, start_optimization)
+    return AppView(vehicles, packages, locations, map_layers, info, start_optimization)
 
 
 def main(page: ft.Page) -> None:

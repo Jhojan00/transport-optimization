@@ -26,11 +26,25 @@ def Header(name: str = "Transport Optimization") -> ft.Card:
     return parent
 
 
-@ft.component
-def Map(extra_layers: list[ftm.MapLayer] | None = None) -> ft.Container:
-    if extra_layers is None:
-        extra_layers = []
+@ft.observable
+@dataclass
+class MapLayers:
+    markers_layer: ftm.MarkerLayer
+    lines_layer: ftm.PolylineLayer
 
+    def append_marker(self, marker: ftm.Marker):
+        self.markers_layer = ftm.MarkerLayer([*self.markers_layer.markers, marker])
+
+    def append_line(self, line: ftm.PolylineMarker):
+        self.lines_layer = ftm.PolylineLayer([*self.lines_layer.polylines, line])
+
+    def reset(self):
+        self.markers_layer = ftm.MarkerLayer([])
+        self.lines_layer = ftm.PolylineLayer([])
+
+
+@ft.component
+def Map(extra_layers: MapLayers) -> ft.Container:
     return ft.Container(
         expand=True,
         content=ftm.Map(
@@ -44,7 +58,8 @@ def Map(extra_layers: list[ftm.MapLayer] | None = None) -> ft.Container:
                     on_image_error=lambda e: print(f"TileLayer Error: {e.data}"),
                 ),
                 ftm.SimpleAttribution(text="OpenStreetMap contributors"),
-                *extra_layers,
+                extra_layers.lines_layer,
+                extra_layers.markers_layer,
             ],
         ),
         border_radius=10,
@@ -52,26 +67,27 @@ def Map(extra_layers: list[ftm.MapLayer] | None = None) -> ft.Container:
 
 
 def draw_line(
-    layer: ftm.PolylineLayer,
+    map_layers: MapLayers,
     a: ftm.MapLatitudeLongitude,
     b: ftm.MapLatitudeLongitude,
     color: ft.Color = ft.Colors.LIGHT_BLUE_100,
     width: float = 2,
 ):
     line = ftm.PolylineMarker([a, b], color=color, stroke_width=width)
-    layer.polylines.append(line)
+    map_layers.append_line(line)
 
 
 def draw_marker(
-    layer: ftm.MarkerLayer,
+    map_layers: MapLayers,
     point: ftm.MapLatitudeLongitude,
     content: ft.Control | None = None,
     tooltip: str | None = None,
+    color: ft.Color = ft.Colors.INDIGO,
 ):
 
     if content is None:
         content = ft.Container(
-            bgcolor=ft.Colors.INDIGO,
+            bgcolor=color,
             border_radius=10,
             width=10,
             height=10,
@@ -79,7 +95,7 @@ def draw_marker(
         )
 
     marker = ftm.Marker(content, coordinates=point)
-    layer.markers.append(marker)
+    map_layers.append_marker(marker)
 
 
 @ft.observable
@@ -140,6 +156,81 @@ def PackagesMenu(package: Counter) -> ft.Card:
                     ft.Text("Packages", size=20, weight=ft.FontWeight.BOLD),
                     ft.Divider(),
                     CounterView(package),
+                ],
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            ),
+            padding=20,
+        )
+    )
+
+
+@ft.observable
+@dataclass
+class Locations:
+    locations: list[str]
+    chosen: str | None = None
+
+    def pick(self, location: str):
+        if not location in self.locations:
+            return
+
+        self.chosen = location
+
+
+@ft.component
+def ConfigMenu(locations: Locations):
+    return ft.Card(
+        ft.Container(
+            ft.Column(
+                [
+                    ft.Text("Config", size=20, weight=ft.FontWeight.BOLD),
+                    ft.Divider(),
+                    ft.Column(
+                        [
+                            ft.Text("Starting point"),
+                            ft.Dropdown(
+                                value=locations.chosen,
+                                options=[
+                                    ft.DropdownOption(loc)
+                                    for loc in locations.locations
+                                ],
+                            ),
+                        ]
+                    ),
+                ],
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            ),
+            padding=20,
+        )
+    )
+
+
+@ft.observable
+@dataclass
+class Info:
+    motorbikes: int
+    vans: int
+    trucks: int
+    missing: int
+
+    def set(self, motorbikes: int, vans: int, trucks: int, missing: int):
+        self.motorbikes = max(0, motorbikes)
+        self.vans = max(0, vans)
+        self.trucks = max(0, trucks)
+
+        self.missing = missing
+
+
+@ft.component
+def InfoMenu(info: Info):
+    return ft.Card(
+        ft.Container(
+            ft.Column(
+                [
+                    ft.Text("Info", size=20, weight=ft.FontWeight.BOLD),
+                    ft.Divider(),
+                    ft.Text(f"Motorbikes: {info.motorbikes} Vans: {info.vans}"),
+                    ft.Text(f"Trucks: {info.trucks} Missing: {info.missing}"),
                 ],
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             ),

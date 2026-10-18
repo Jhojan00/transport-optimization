@@ -24,3 +24,7 @@ class Vehicle:
     @property
     def volume(self) -> float:
         return self.width * self.length * self.height
+
+    @property
+    def packages(self) -> list[Package]:
+        return self.content.get_packages()

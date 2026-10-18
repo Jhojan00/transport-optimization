@@ -32,7 +32,9 @@ def calculate_shortest_path(graph: dict, start_node: str):
     return distances, previous_nodes
 
 
-def get_optimal_path(previous_nodes: dict, start_node: str, target_node: str) -> list[str]:
+def get_optimal_path(
+    previous_nodes: dict, start_node: str, target_node: str
+) -> list[str]:
     path = []
     current_node = target_node
 
@@ -45,3 +47,29 @@ def get_optimal_path(previous_nodes: dict, start_node: str, target_node: str) ->
     if path and path[0] == start_node:
         return path
     return []
+
+
+def get_route_through_waypoints(graph: dict, waypoints: list[str]) -> list[str]:
+    if not waypoints or len(waypoints) < 2:
+        return waypoints
+
+    complete_path = []
+
+    for i in range(len(waypoints) - 1):
+        start = waypoints[i]
+        target = waypoints[i + 1]
+
+        _, previous_nodes = calculate_shortest_path(graph, start)
+
+        segment_path = get_optimal_path(previous_nodes, start, target)
+
+        if not segment_path:
+            return []
+
+        if i == 0:
+            complete_path.extend(segment_path)
+        else:
+            complete_path.extend(segment_path[1:])
+
+    return complete_path
+

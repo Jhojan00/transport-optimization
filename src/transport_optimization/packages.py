@@ -105,3 +105,19 @@ class GuillotineNode:
 
         new_node.package = package
         return new_node
+
+    def __get_packages(self, packages):
+        if self.package is not None:
+            packages.append(self.package)
+            return
+
+        if self.left is not None:
+            self.left.__get_packages(packages)
+
+        if self.right is not None:
+            self.right.__get_packages(packages)
+
+    def get_packages(self) -> list[Package]:
+        packages = []
+        self.__get_packages(packages)
+        return packages
