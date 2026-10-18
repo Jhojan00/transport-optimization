@@ -38,9 +38,9 @@ def distribute_packages(
     motorbikes: list[Vehicle],
     vans: list[Vehicle],
     trucks: list[Vehicle],
-) -> list[Vehicle] | None:
+) -> tuple[list[Vehicle], int]:
     if len(packages) <= 0:
-        return
+        return [], 0
 
     sorted_packates: list[Package] = sorted(
         packages, key=lambda e: e.volume, reverse=True
@@ -80,9 +80,4 @@ def distribute_packages(
             packet += 1
             break
 
-    print(packet, len(sorted_packates))
-
-    if len(sorted_packates) > packet:
-        raise Exception("Not enought vehicles.")
-
-    return used_vehicles
+    return used_vehicles, len(sorted_packates) - packet
