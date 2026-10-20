@@ -27,7 +27,7 @@ def calculate_shortest_path(graph: dict, start_node: str):
             if distance < distances[neighbor]:
                 distances[neighbor] = distance
                 previous_nodes[neighbor] = current_node
-                heapq.heappush(priority_queue, (distance, neighbor))
+                heapq.heappush(priority_queue, (distance, neighbor)) # Agregamos el vecino a la cola de prioridad
 
     return distances, previous_nodes
 
